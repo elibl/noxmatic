@@ -18,11 +18,11 @@
 Settings settings;
 Information information;
 TemperatureCalculator temperatureCalculator(PIN_TEMPERATURE_DATA, &information);
-Pump pump(PIN_PUMP);
+Pump pump(PIN_PUMP, &settings);
 ChainOiler chainOiler(&pump, &settings, &information);
 Heater heater(PIN_HEATER1, PIN_HEATER2, &settings, &information);
 Display display(&settings, &information);
-CommunicationESP communication(&settings, &pump, &display);
+CommunicationESP communication(&display, &information, &pump, &settings);
 DistanceCalculator distanceCalculator(&settings, &information, &chainOiler);
 
 String ip;
@@ -46,7 +46,6 @@ void loop() {
   pump.process();
   if (ip.length() > 0) {
     communication.process();
-    return;
   }
   temperatureCalculator.process();
   distanceCalculator.process();
@@ -54,6 +53,6 @@ void loop() {
   heater.process();
 }
 
-void speedSignalTrigger() {
+ICACHE_RAM_ATTR void speedSignalTrigger() {
   distanceCalculator.processTick();
 }

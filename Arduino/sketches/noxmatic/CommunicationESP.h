@@ -1,10 +1,9 @@
-#include "Settings.h"
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
 #include "Display.h"
 #include <ESP8266HTTPUpdateServer.h>
-
-#define PUMP_INTERVAL_MILLIS 1000;
+#include <ESP8266WebServer.h>
+#include <ESP8266WiFi.h>
+#include "Information.h"
+#include "Settings.h"
 
 const char* config_ssid = "noxmatic";
 const char* config_password = "noxmatic";
@@ -15,11 +14,11 @@ ESP8266HTTPUpdateServer httpUpdater;
 class CommunicationESP {
 
 public:
-  CommunicationESP(Settings *settings, Pump *pump, Display *display) {
-      this->settings = settings;
-      this->pump = pump;
+  CommunicationESP(Display *display, Information *information, Pump *pump, Settings *settings) {
       this->display = display;
-      pumping = false;
+      this->information = information;
+      this->pump = pump;
+      this->settings = settings;
   }
   
   virtual ~CommunicationESP() {    
@@ -47,26 +46,25 @@ public:
     httpUpdater.setup(&server);
     server.begin();
     server.on("/", std::bind(&CommunicationESP::sendHtml, this));
+    server.on("/speed", std::bind(&CommunicationESP::handleSpeed, this));
 
     return WiFi.localIP().toString();
   }
   
   void process() {
-    static unsigned long nextMillis = 0;
-
-    if (pumping && nextMillis < millis()) {
-      nextMillis = millis() + PUMP_INTERVAL_MILLIS;
-      pump->pump();
-    }
-    
     server.handleClient();
   }
 
 private:
-  Settings *settings;
-  Pump *pump;
   Display *display;
-  bool pumping;
+  Information *information;
+  Pump *pump;
+  Settings *settings;
+
+  void handleSpeed() {
+    String speed = (String)information->speed + " km/h";
+    server.send(200, "text/plain", speed);
+  }
 
   void sendHtml() {
     String action = server.arg("action");
@@ -81,36 +79,59 @@ private:
       settings->setOilerRotationLength(getValue("oilerRotationLength", 1));
       settings->setOilerDistance(getValue("oilerDistance", 1));
       settings->setOilerEmergencyInterval(getValue("oilerEmergencyInterval", 1));
+      settings->setOilerPumpDuration(getValue("oilerPumpDuration", 1));
       settings->persist();
     } else if (action == "pump") {
-      pumping = !pumping;
+      pump->pump();
     }
 
-    String temp = "<html><body><form action=\"\" method=\"post\"><input type=\"hidden\" name=\"action\" id=\"action\" value=\"save\"><table border=\"1\" cellspacing=\"0\" cellpadding=\"5\">";
-    temp += "<thead><tr><th>Setting</th><th>Aktuell</th><th>Neu</th></tr></thead><tbody>";
+    String temp = "<html>";
+    temp += R"=====(
+              <head>
+              <meta http-equiv="content-type" content="text/html; charset=utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <script>
+              setInterval(function() {
+                getData();
+              }, 500);
+
+              function getData() {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                  if (this.readyState == 4 && this.status == 200) {
+                    document.getElementById("speed").innerHTML =
+                    this.responseText;
+                  }
+                };
+                xhttp.open("GET", "speed", true);
+                xhttp.send();
+                }
+              </script>
+              </head>
+            )=====";
+    temp += "<body>";
+    temp += "<table border=\"1\"  width=\"100%\" cellspacing=\"0\" cellpadding=\"5\" style=\"white-space:nowrap\">";
+    temp += "<thead><tr><th colspan=\"3\" style=\"font-size:300%; padding:20\" id=\"speed\">0 km/h</th></tr></thead>";
     temp += "<tr><td colspan=\"3\"></td></tr>";
-    temp += "<tr><td colspan=\"3\"><b>Heater</b></td></tr>";
+    temp += "<tbody><form action=\"\" method=\"post\" id=\"save\"><input type=\"hidden\" name=\"action\" id=\"action\" value=\"save\">";
+    temp += "<tr><th>Heizung</th><th>Aktuell</th><th>Neu</th></tr>";
     temp += buildRow("heaterStartTemp", "Ein Temperatur", settings->getHeaterStartTemp(), "0.5", 10, 0, 25);
     temp += buildRow("heaterStartPower", "Ein Leistung", settings->getHeaterStartPower(), "5", 1, 0, 100);
     temp += buildRow("heaterMaxTemp", "Max Temperatur", settings->getHeaterMaxTemp(), "0.5", 10, 0, 25);
     temp += buildRow("heaterMaxPower", "Max Leistung", settings->getHeaterMaxPower(), "5", 1, 0, 100);
     temp += buildRow("heaterBalance", "Gas Anteil", settings->getHeaterBalance(), "5", 1, 0, 100);
-  
-    temp += "<tr><td colspan=\"3\"></td></tr>";
-    temp += "<tr><td colspan=\"3\"><b>Oiler</b></td></tr>";
-    temp += buildRow("oilerTickPerRotation", "Radticks", settings->getOilerTickPerRotation(), "1", 1, 1, 255);
-    temp += buildRow("oilerRotationLength", "Radumfang", settings->getOilerRotationLength(), "10", 1, 10, 2550);
-    temp += buildRow("oilerDistance", "Distanz", settings->getOilerDistance(), "100", 1, 100, 25500);
-    temp += buildRow("oilerEmergencyInterval", "Notintervall", settings->getOilerEmergencyInterval(), "10", 1, 10, 2550);
-    temp += "</tbody></table><button type=\"submit\">Speichern</button></form>";
-    temp += "<form action=\"\" method=\"post\"><input type=\"hidden\" name=\"action\" id=\"action\" value=\"pump\"><button type=\"submit\">Pumpe</button> ist ";
-    if (pumping) {
-      temp += "an";
-    } else {
-      temp += "aus";
-    }
-    temp += "</form>";
-    temp += "</body></html>";
+    temp += "<tr><td colspan=\"2\"></td><td></td></tr>";
+    temp += "<tr><th>Öler</th><th>Aktuell</th><th>Neu</th></tr>";
+    temp += buildRow("oilerTickPerRotation", "Radticks [Anzahl]", settings->getOilerTickPerRotation(), "1", 1, 1, 255);
+    temp += buildRow("oilerRotationLength", "Radumfang [mm]", settings->getOilerRotationLength(), "10", 1, 10, 2550);
+    temp += buildRow("oilerDistance", "Distanz [m]", settings->getOilerDistance(), "100", 1, 100, 25500);
+    temp += buildRow("oilerEmergencyInterval", "Notintervall [s]", settings->getOilerEmergencyInterval(), "10", 1, 10, 2550);
+    temp += buildRow("oilerPumpDuration", "Pumpdauer [ms]", settings->getOilerPumpDuration(), "10", 1, 10, 2550);
+    temp += "</form><tr><td colspan=\"2\"></td><td></td></tr>";
+    temp += "<form action=\"\" method=\"post\"><input type=\"hidden\" name=\"action\" id=\"action\" value=\"pump\">";
+    temp += "<tr><td align=\"center\" colspan=\"2\" style=\"padding:10\"><button type=\"submit\">Pumpen</button></td></form>";
+    temp += "<td align=\"center\" style=\"padding:10\"><button form=\"save\" type=\"submit\">Speichern</button></td></tr>";
+    temp += "</tbody></table></body></html>";
   
     temp += add;
     server.send(200, "text/html", temp);
@@ -120,11 +141,11 @@ private:
     float floatVal = (float) value / factor;
     String row = "<tr><td>";
     row += text;
-    row += "</td><td><input readonly type=\"number\" step=\"";
+    row += "</td><td><input style=\"direction:rtl;width:100%\" readonly type=\"number\" step=\"";
     row += step;
     row += "\" lang=\"en-150\" value=\"";
     row += floatVal;
-    row += "\" /></td><td><input type=\"number\" step=\"";
+    row += "\" /></td><td><input style=\"direction:rtl;width:100%\" type=\"number\" step=\"";
     row += step;
     row += "\" lang=\"en-150\" value=\"";
     row += floatVal;

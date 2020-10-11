@@ -7,12 +7,13 @@ const int OILER_ROTATIONLENGTH_ADDRESS = 0;
 const int OILER_TICKPERROTATION_ADDRESS = 1;
 const int OILER_DISTANCE_ADDRESS = 2;
 const int OILER_EMERGENCYINTERVAL_ADDRESS = 3;
+const int OILER_PUMPDURATION_ADDRESS = 4;
 
-const int HEATER_STARTTEMP_ADDRESS = 4;
-const int HEATER_STARTPOWER_ADDRESS = 5;
-const int HEATER_MAXTEMP_ADDRESS = 6;
-const int HEATER_MAXPOWER_ADDRESS = 7;
-const int HEATER_BALANCE_ADDRESS = 8;
+const int HEATER_STARTTEMP_ADDRESS = 5;
+const int HEATER_STARTPOWER_ADDRESS = 6;
+const int HEATER_MAXTEMP_ADDRESS = 7;
+const int HEATER_MAXPOWER_ADDRESS = 8;
+const int HEATER_BALANCE_ADDRESS = 9;
 
 class Settings {
 
@@ -23,6 +24,7 @@ public:
     oilerTickPerRotation = EEPROM.read(OILER_TICKPERROTATION_ADDRESS);
     oilerDistance = EEPROM.read(OILER_DISTANCE_ADDRESS) * 100;
     oilerEmergencyInterval = EEPROM.read(OILER_EMERGENCYINTERVAL_ADDRESS) * 10;
+    oilerPumpDuration = EEPROM.read(OILER_PUMPDURATION_ADDRESS) * 10;
   
     heaterStartTemp = EEPROM.read(HEATER_STARTTEMP_ADDRESS);
     heaterStartPower = EEPROM.read(HEATER_STARTPOWER_ADDRESS);
@@ -39,6 +41,7 @@ public:
     EEPROM.write(OILER_TICKPERROTATION_ADDRESS, oilerTickPerRotation);
     EEPROM.write(OILER_DISTANCE_ADDRESS, (oilerDistance / 100));
     EEPROM.write(OILER_EMERGENCYINTERVAL_ADDRESS, (oilerEmergencyInterval / 10));
+    EEPROM.write(OILER_PUMPDURATION_ADDRESS, (oilerPumpDuration / 10));
   
     EEPROM.write(HEATER_STARTTEMP_ADDRESS, heaterStartTemp);
     EEPROM.write(HEATER_STARTPOWER_ADDRESS, heaterStartPower);
@@ -112,6 +115,14 @@ public:
     this->oilerEmergencyInterval = oilerEmergencyInterval;
   }
 
+ int getOilerPumpDuration() {
+    return oilerPumpDuration;
+  }
+
+  void setOilerPumpDuration(int oilerPumpDuration) {
+    this->oilerPumpDuration = oilerPumpDuration;
+  }
+
   int getHeaterBalance() {
     return heaterBalance;
   }
@@ -125,6 +136,7 @@ private:
 	int oilerTickPerRotation;
 	int oilerDistance;
 	int oilerEmergencyInterval;
+  int oilerPumpDuration;
 	int heaterStartTemp;
 	int heaterStartPower;
 	int heaterMaxTemp;

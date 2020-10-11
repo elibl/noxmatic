@@ -1,15 +1,16 @@
+#include "Settings.h"
+
 #ifndef PUMP_H_
 #define PUMP_H_
 
-#define PUMP_ON_INTERVAL_MILLIS 750;
-
 class Pump {
 public:
-  Pump(int pinPump) {
+  Pump(int pinPump, Settings *settings) {
     pumpActive = false;
     this->pinPump = pinPump;
     pinMode(pinPump, OUTPUT);
     pumpDeactivateMillis = 0;
+    pumpDurationMillis = settings->getOilerPumpDuration();
   }
 
   ~Pump() {
@@ -31,6 +32,7 @@ private:
   int pinPump;
   bool pumpActive;
   long pumpDeactivateMillis;
+  long pumpDurationMillis;
 
   void deactivatePumpPin() {
     pumpActive = false;
@@ -40,7 +42,7 @@ private:
   void activatePumpPin() {
     pumpActive = true;
     digitalWrite(pinPump, HIGH);
-    pumpDeactivateMillis = millis() + PUMP_ON_INTERVAL_MILLIS;
+    pumpDeactivateMillis = millis() + pumpDurationMillis;
   }
 
   void processPump() {
