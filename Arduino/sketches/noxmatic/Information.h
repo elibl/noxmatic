@@ -3,11 +3,13 @@
 
 class Information {
 public:
-  int speed;
+  int connectWifiRetry;
   int distancePercent;
-  int temperature;
   int heaterPower;
+  int speed;
+  int temperature;
   bool pumpPending;
   bool speedSignalLost;
+  String ip;
 };
 #endif /* INFORMATION_H_ */

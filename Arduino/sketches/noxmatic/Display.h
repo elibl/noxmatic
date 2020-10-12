@@ -19,13 +19,47 @@ public:
     this->information = information;
     u8g->begin();
     u8g->setContrast(30);
-    showMessage = false;
   }
 
   ~Display() {
   }
+  
+  void process() {
+    processRefresh();
+  }
+ 
+private:
+  U8G2 *u8g;
+  Settings *settings;
+  Information *information;
 
-  void drawConnectProgress(int progress) {
+  void processRefresh() {
+    static unsigned long nextRefreshMillis = 0;
+  
+    unsigned long currentMillis = millis();
+    if (currentMillis > nextRefreshMillis) {
+      nextRefreshMillis = currentMillis + REFRESH_INTERVAL_MILLIS;
+      if (information->ip.length() > 0) {
+        drawIp();
+      }
+      else if (information->connectWifiRetry < 20) {
+        drawConnectProgress();
+      }
+      else {
+        drawNormal();
+      }
+    }
+  }
+
+  void drawIp() {
+    u8g->clearBuffer();
+    u8g->setFont(u8g_font_6x13);
+    u8g->setCursor(0, 63);
+    u8g->print(information->ip);
+    u8g->sendBuffer();
+  }
+
+  void drawConnectProgress() {
     u8g->clearBuffer();
     u8g->drawCircle(DISPLAY_WIDTH/2, 31, 25, U8G2_DRAW_ALL);
     u8g->drawEllipse(DISPLAY_WIDTH/2, 40, 15, 5, U8G2_DRAW_LOWER_LEFT);
@@ -37,46 +71,8 @@ public:
     u8g->drawFilledEllipse(43, 28, 3, 5, U8G2_DRAW_ALL);
     u8g->drawFilledEllipse(DISPLAY_WIDTH -43, 28, 3, 5, U8G2_DRAW_ALL);
 
-    u8g->drawBox(1, 60, progress, 5);
+    u8g->drawBox(1, 60, information->connectWifiRetry*5, 5);
 
-    u8g->sendBuffer();
-  }
-
-  void setIP(String ip) {
-    message = ip;
-    showMessage = true;
-  }
-  
-  void process() {
-    processRefresh();
-  }
- 
-private:
-  U8G2 *u8g;
-  Settings *settings;
-  Information *information;
-  String message;
-  bool showMessage;
-
-  void processRefresh() {
-    static unsigned long nextRefreshMillis = 0;
-  
-    unsigned long currentMillis = millis();
-    if (currentMillis > nextRefreshMillis) {
-      nextRefreshMillis = currentMillis + REFRESH_INTERVAL_MILLIS;
-      if (showMessage) {
-        drawMessage();
-      } else {
-        drawNormal();
-      }
-    }
-  }
-
-  void drawMessage() {
-    u8g->clearBuffer();
-    u8g->setFont(u8g_font_6x13);
-    u8g->setCursor(0, 63);
-    u8g->print(message);
     u8g->sendBuffer();
   }
   

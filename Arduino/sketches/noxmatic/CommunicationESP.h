@@ -1,9 +1,10 @@
-#include "Display.h"
 #include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>
 #include "Information.h"
 #include "Settings.h"
+
+#define REFRESH_INTERVAL_MILLIS 500;
 
 const char* config_ssid = "noxmatic";
 const char* config_password = "noxmatic";
@@ -14,8 +15,7 @@ ESP8266HTTPUpdateServer httpUpdater;
 class CommunicationESP {
 
 public:
-  CommunicationESP(Display *display, Information *information, Pump *pump, Settings *settings) {
-      this->display = display;
+  CommunicationESP(Information *information, Pump *pump, Settings *settings) {
       this->information = information;
       this->pump = pump;
       this->settings = settings;
@@ -24,39 +24,45 @@ public:
   virtual ~CommunicationESP() {    
   }
 
-  String connectWifi() {
+  void init() {
     WiFi.disconnect(); 
     WiFi.mode(WIFI_STA);
     WiFi.begin(config_ssid, config_password);
-    int retry = 0;
-    int progress = 0;
-    while (WiFi.status() != WL_CONNECTED) {
-      retry++;
-      progress += 5;
-      display->drawConnectProgress(progress);
-      if (retry > 20) {
-        WiFi.disconnect();
-        WiFi.mode(WIFI_OFF);
-        WiFi.forceSleepBegin();
-        delay(1);
-        return "";
-      }
-      delay(500);
-    }
-    httpUpdater.setup(&server);
-    server.begin();
-    server.on("/", std::bind(&CommunicationESP::sendHtml, this));
-    server.on("/speed", std::bind(&CommunicationESP::handleSpeed, this));
-
-    return WiFi.localIP().toString();
+    information->connectWifiRetry = 0;
   }
   
   void process() {
-    server.handleClient();
+    if (information->connectWifiRetry < 20 || WiFi.status() == WL_CONNECTED) {
+      static unsigned long nextRefreshMillis = 0;
+
+      unsigned long currentMillis = millis();
+      if (currentMillis > nextRefreshMillis) {
+        nextRefreshMillis = currentMillis + REFRESH_INTERVAL_MILLIS;
+        if (information->ip.length() > 0 && WiFi.status() == WL_CONNECTED) {
+          server.handleClient();
+        }
+        else if (WiFi.status() != WL_CONNECTED) {
+          information->connectWifiRetry++;
+        }
+        else {
+          httpUpdater.setup(&server);
+          server.begin();
+          server.on("/", std::bind(&CommunicationESP::sendHtml, this));
+          server.on("/speed", std::bind(&CommunicationESP::handleSpeed, this));
+
+          information->ip = WiFi.localIP().toString();
+          information->connectWifiRetry = 20;
+        }
+      }
+    }
+    else if (WiFi.getMode() != WIFI_OFF){
+      WiFi.disconnect();
+      WiFi.mode(WIFI_OFF);
+      WiFi.forceSleepBegin();
+    }
   }
 
 private:
-  Display *display;
   Information *information;
   Pump *pump;
   Settings *settings;

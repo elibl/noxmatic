@@ -22,21 +22,15 @@ Pump pump(PIN_PUMP, &settings);
 ChainOiler chainOiler(&pump, &settings, &information);
 Heater heater(PIN_HEATER1, PIN_HEATER2, &settings, &information);
 Display display(&settings, &information);
-CommunicationESP communication(&display, &information, &pump, &settings);
+CommunicationESP communication(&information, &pump, &settings);
 DistanceCalculator distanceCalculator(&settings, &information, &chainOiler);
-
-String ip;
 
 void setup() {
   //Serial.begin(115200);
   pump.init();
   heater.init();
   temperatureCalculator.init();
-  display.drawConnectProgress(0);
-  ip = communication.connectWifi();
-  if (ip.length() > 0) {
-    display.setIP(ip);
-  }
+  communication.init();
   pinMode(PIN_SPEED_SIGNAL, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(PIN_SPEED_SIGNAL), speedSignalTrigger, FALLING);
 }
@@ -44,9 +38,7 @@ void setup() {
 void loop() {
   display.process();
   pump.process();
-  if (ip.length() > 0) {
-    communication.process();
-  }
+  communication.process();
   temperatureCalculator.process();
   distanceCalculator.process();
   chainOiler.process();
