@@ -12,7 +12,7 @@ const int DISPLAY_WIDTH = 102;
 
 class Display {
 public:
-  Display(Settings *settings, Information *information) {
+  Display(Information *information, Settings *settings) {
     u8g = new U8G2_UC1701_EA_DOGS102_F_4W_HW_SPI(U8G2_R0, D1, D0, D3);
     u8g->setColorIndex(1);
     this->settings = settings;

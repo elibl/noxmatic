@@ -8,7 +8,9 @@ public:
   int heaterPower;
   int speed;
   int temperature;
+  bool pumpActive;
   bool pumpPending;
+  bool rain;
   bool speedSignalLost;
   String ip;
 };

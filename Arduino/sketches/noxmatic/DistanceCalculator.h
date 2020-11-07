@@ -2,24 +2,19 @@
 #include "Information.h"
 
 #define SIGNAL_LOST_INTERVAL_MILLIS 600000;
-#define SPEED_INTERVALL 500;
+#define SPEED_INTERVAL 500;
 
 class DistanceCalculator {
 public:
-  DistanceCalculator(Settings *settings, Information *information, ChainOiler *chainOiler) {
+  DistanceCalculator(ChainOiler *chainOiler, Information *information, Settings *settings) {
     this->information = information;
     this->chainOiler = chainOiler;
-    lastTickMillis = 0;
-    setSignalLost(false);
-    currentSpeed = 0;
-    speedTickFactor = 0;
-    speedTicks = 0;
-    distancePerTick = 0;
+    this->setSignalLost(false);
     long rotationLength = settings->getOilerRotationLength();
     long tickPerRotation = settings->getOilerTickPerRotation();
     if (tickPerRotation != 0) {
-      speedTickFactor = rotationLength * 3600 / tickPerRotation;
-      distancePerTick = (float)rotationLength / tickPerRotation;
+      this->speedTickFactor = rotationLength * 3600 / tickPerRotation;
+      this->distancePerTick = (float)rotationLength / tickPerRotation;
     }
   }
 
@@ -44,11 +39,14 @@ public:
   }
 
 private:
-  unsigned long lastTickMillis;
-  int currentSpeed;
-  long speedTickFactor;
-  int speedTicks;
-  float distancePerTick;
+  int currentSpeed = 0;
+  int lastSpeed = 0;
+  int speedTicks = 0;
+  unsigned long lastCalcMillis = 0;
+  unsigned long lastTickMillis = 0;
+  unsigned long nextSpeedMillis = millis() + SPEED_INTERVAL;
+  long speedTickFactor = 0;
+  float distancePerTick = 0;
   Information *information;
   ChainOiler *chainOiler;
 
@@ -57,13 +55,10 @@ private:
   }
 
   void calculateSpeed() {
-    static unsigned long nextSpeedMillis = 0;
-    static unsigned long lastCalcMillis = 0;
-    static int lastSpeed = 0;
   
     unsigned long currentMillis = millis();
     if (currentMillis > nextSpeedMillis) {
-      nextSpeedMillis = currentMillis + SPEED_INTERVALL;
+      nextSpeedMillis = currentMillis + SPEED_INTERVAL;
   
       long currentTicks = (long)speedTicks;
       unsigned long lastTick = lastTickMillis;

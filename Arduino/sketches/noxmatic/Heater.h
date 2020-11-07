@@ -6,7 +6,7 @@
 
 class Heater {
 public:
-  Heater(int pinHeater1, int pinHeater2, Settings *settings, Information *information) {
+  Heater(int pinHeater1, int pinHeater2, Information *information, Settings *settings) {
     this->pwmHeater1 = new Pwm(pinHeater1);
     this->pwmHeater2 = new Pwm(pinHeater2);
     

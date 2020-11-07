@@ -2,10 +2,9 @@ class Pwm {
 public:
   Pwm(int pinPwm) {
     this->pinPwm = pinPwm;
-    pinMode(pinPwm, OUTPUT);
-    pinActive = false;
-    power = 0;
-    nextMillis = 0;
+    this->pinActive = false;
+    this->power = 0;
+    this->nextMillis = 0;
   }
 
   ~Pwm() {
@@ -16,6 +15,7 @@ public:
   }
 
   void init() {
+    pinMode(pinPwm, OUTPUT);
     deactivatePin();
   }
   

@@ -7,15 +7,15 @@
 
 class ChainOiler {
 public:
-  ChainOiler(Pump *pump, Settings *settings, Information *information) {
+  ChainOiler(Information *information, Pump *pump, Settings *settings) {
     this->information = information;
     this->pump = pump;
-    setPumpPending(false);
-    emergencyPumpInterval = 600000;
-    long oilDistance = settings->getOilerDistance();
-    emergencyPumpInterval = (long)settings->getOilerEmergencyInterval() * 1000;
-    requiredOilDistance = oilDistance * 1000;
-    remainingOilDistance = requiredOilDistance /2;
+    this->setPumpPending(false);
+    this->emergencyPumpInterval = (long)settings->getOilerEmergencyInterval() * 1000;
+    this->nextEmergencyPump = millis() + emergencyPumpInterval;
+    this->requiredOilDistance = (long)settings->getOilerDistance() * 1000;
+    this->remainingOilDistance = requiredOilDistance /2;
+    this->lastRain = information->rain;
   }
 
   ~ChainOiler() {
@@ -31,11 +31,26 @@ public:
   }
 
   void process() {
-    static unsigned long nextEmergencyPump = 0;
+    bool rain = information->rain;
+
+    if (lastRain != rain) {
+      if (rain) {
+        requiredOilDistance = requiredOilDistance / 10;
+        remainingOilDistance = remainingOilDistance / 10;
+        emergencyPumpInterval = emergencyPumpInterval / 10;
+        nextEmergencyPump -= emergencyPumpInterval * 9;
+      }
+      else {
+        requiredOilDistance = requiredOilDistance * 10;
+        remainingOilDistance = remainingOilDistance * 10;
+        nextEmergencyPump += emergencyPumpInterval * 9;
+        emergencyPumpInterval = emergencyPumpInterval * 10;
+      }
+    }
+    lastRain = rain;
     
     unsigned long currentMillis = millis();
-    boolean signalLost = information->speedSignalLost;
-    if (signalLost && currentMillis > nextEmergencyPump) {
+    if (information->speedSignalLost && currentMillis > nextEmergencyPump) {
       nextEmergencyPump = currentMillis + emergencyPumpInterval;
       pump->pump();
     }
@@ -46,8 +61,10 @@ private:
   long requiredOilDistance;
   long remainingOilDistance;
 	Pump *pump;
+  bool lastRain;
 	bool pumpPending;
 	long emergencyPumpInterval;
+  long nextEmergencyPump;
   Information *information;
 
   int getDistancePercent() {
