@@ -86,10 +86,13 @@ private:
       settings->setOilerDistance(getValue("oilerDistance", 1));
       settings->setOilerEmergencyInterval(getValue("oilerEmergencyInterval", 1));
       settings->setOilerPumpDuration(getValue("oilerPumpDuration", 1));
+      settings->setOilerPumpImpulses(getValue("oilerPumpImpulses", 1));
       settings->persist();
     } else if (action == "pump") {
       pump->pump();
     }
+
+//TODO: Tankvolumen [ml] && Anzahl Pumpvorgänge
 
     String temp = "<html>";
     temp += R"=====(
@@ -133,6 +136,7 @@ private:
     temp += buildRow("oilerDistance", "Distanz [m]", settings->getOilerDistance(), "100", 1, 100, 25500);
     temp += buildRow("oilerEmergencyInterval", "Notintervall [s]", settings->getOilerEmergencyInterval(), "10", 1, 10, 2550);
     temp += buildRow("oilerPumpDuration", "Pumpdauer [ms]", settings->getOilerPumpDuration(), "10", 1, 10, 2550);
+    temp += buildRow("oilerPumpImpulses", "Pumpimpulse [Anzahl]", settings->getOilerPumpImpulses(), "1", 1, 1, 255);
     temp += "</form><tr><td colspan=\"2\"></td><td></td></tr>";
     temp += "<form action=\"\" method=\"post\"><input type=\"hidden\" name=\"action\" id=\"action\" value=\"pump\">";
     temp += "<tr><td align=\"center\" colspan=\"2\" style=\"padding:10\"><button type=\"submit\">Pumpen</button></td></form>";

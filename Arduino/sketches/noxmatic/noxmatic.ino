@@ -16,8 +16,8 @@
 #define PIN_TEMPERATURE_DATA D2
 #define PIN_HEATER1 D3
 #define PIN_HEATER2 D4
-#define PIN_SPEED_SIGNAL D6
-#define PIN_PUMP D8
+#define PIN_SPEED_SIGNAL D8
+#define PIN_PUMP D7
 
 Settings settings;
 Information information;

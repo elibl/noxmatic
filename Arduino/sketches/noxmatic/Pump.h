@@ -11,6 +11,8 @@ public:
     this->pinPump = pinPump;
     this->pumpDeactivateMillis = 0;
     this->pumpDurationMillis = settings->getOilerPumpDuration();
+    this->pumpImpulses = settings->getOilerPumpImpulses();
+    this->pumpImpulsesLeft = 0;
   }
 
   ~Pump() {
@@ -26,12 +28,15 @@ public:
   }
 
   void pump() {
-    activatePumpPin();
+    if (!information->pumpActive) { activatePumpPin(); }
+    pumpImpulsesLeft = pumpImpulses - 1;
   }
 
 private:
   Information *information;
   int pinPump;
+  int pumpImpulses;
+  int pumpImpulsesLeft;
   long pumpDeactivateMillis;
   long pumpDurationMillis;
 
@@ -50,6 +55,10 @@ private:
     unsigned long currentMillis = millis();
     if (information->pumpActive && pumpDeactivateMillis < currentMillis) {
       deactivatePumpPin();
+    }
+    if (!information->pumpActive && pumpImpulsesLeft > 0 && currentMillis - pumpDeactivateMillis > 100) {
+      activatePumpPin();
+      pumpImpulsesLeft--;
     }
   }
 };
