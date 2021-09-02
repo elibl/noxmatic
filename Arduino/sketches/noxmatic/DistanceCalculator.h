@@ -7,14 +7,18 @@
 class DistanceCalculator {
 public:
   DistanceCalculator(ChainOiler *chainOiler, Information *information, Settings *settings) {
-    this->information = information;
     this->chainOiler = chainOiler;
+    this->information = information;
+    this->settings = settings;
     this->setSignalLost(false);
     long rotationLength = settings->getOilerRotationLength();
     long tickPerRotation = settings->getOilerTickPerRotation();
+    float transmission = (float)settings->getOilerSprocketTeeth() / settings->getOilerRearSprocketTeeth();
     if (tickPerRotation != 0) {
       this->speedTickFactor = rotationLength * 3600 / tickPerRotation;
       this->distancePerTick = (float)rotationLength / tickPerRotation;
+      this->speedTickFactor *= transmission;
+      this->distancePerTick *= transmission;
     }
   }
 
@@ -39,6 +43,7 @@ public:
   }
 
 private:
+  unsigned int lastDistanceSave = 0;
   int currentSpeed = 0;
   int lastSpeed = 0;
   int speedTicks = 0;
@@ -47,8 +52,9 @@ private:
   unsigned long nextSpeedMillis = millis() + SPEED_INTERVAL;
   long speedTickFactor = 0;
   float distancePerTick = 0;
-  Information *information;
   ChainOiler *chainOiler;
+  Information *information;
+  Settings *settings;
 
   void setSignalLost(bool lost) {
     information->speedSignalLost = lost;
@@ -65,19 +71,25 @@ private:
       long relevantMillis = lastTick - lastCalcMillis;
       lastCalcMillis = lastTick;
       
-      long calcSpeed = 0;
       if (relevantMillis != 0) {
-        calcSpeed = (currentTicks * speedTickFactor) / relevantMillis;
-      }
-      calcSpeed /= 1000;
-      currentSpeed = (calcSpeed + lastSpeed) / 2;
-      information->speed = currentSpeed;
+        currentSpeed = (currentTicks * speedTickFactor) / relevantMillis;
+      } else currentSpeed = 0;
+      information->speed = currentSpeed / pow(10,3);
+      if (information->ticks < pow(2,32)) { information->ticks += currentTicks; }
 
       long distance = currentTicks * distancePerTick;
       chainOiler->processDistance(distance);
+      information->distance += distance;
+
+      unsigned int distanceSinceSave = (information->distance - lastDistanceSave) * pow(10,-3);
+      if(currentSpeed == 0 && lastSpeed > 0 && distanceSinceSave > 50) {
+        settings->setTotalDistance(settings->getTotalDistance() + distanceSinceSave);
+        settings->persist();
+        lastDistanceSave = information->distance;
+      }
   
       speedTicks -= currentTicks;
-      lastSpeed = calcSpeed;
+      lastSpeed = currentSpeed;
     }
   }
 };

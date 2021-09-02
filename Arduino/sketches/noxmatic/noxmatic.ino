@@ -16,17 +16,17 @@
 #define PIN_TEMPERATURE_DATA D2
 #define PIN_HEATER1 D3
 #define PIN_HEATER2 D4
-#define PIN_SPEED_SIGNAL D8
+#define PIN_SPEED_SIGNAL D2
 #define PIN_PUMP D7
 
-Settings settings;
 Information information;
+Settings settings(&information);
 //TemperatureCalculator temperatureCalculator(PIN_TEMPERATURE_DATA, &information);
 Led led(PIN_LED, &information);
 Pump pump(PIN_PUMP, &information, &settings);
 ChainOiler chainOiler(&information, &pump, &settings);
 //Heater heater(PIN_HEATER1, PIN_HEATER2, &information, &settings);
-RainButton rainButton(PIN_RAINBUTTON, &information, &pump);
+RainButton rainButton(PIN_RAINBUTTON, &information, &pump, &settings);
 //Display display(&information, &settings);
 CommunicationESP communication(&information, &pump, &settings);
 DistanceCalculator distanceCalculator(&chainOiler, &information, &settings);

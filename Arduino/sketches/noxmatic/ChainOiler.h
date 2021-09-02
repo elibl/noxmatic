@@ -14,7 +14,7 @@ public:
     this->emergencyPumpInterval = (long)settings->getOilerEmergencyInterval() * 1000;
     this->nextEmergencyPump = millis() + emergencyPumpInterval;
     this->requiredOilDistance = (long)settings->getOilerDistance() * 1000;
-    this->remainingOilDistance = requiredOilDistance /2;
+    this->remainingOilDistance = requiredOilDistance / 10;
     this->lastRain = information->rain;
   }
 

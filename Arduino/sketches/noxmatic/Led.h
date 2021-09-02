@@ -47,10 +47,11 @@ private:
       digitalWrite(pinLed, ledState = HIGH);
       lastLedChange = currentMillis;
       }
-      else if (information->speedSignalLost && information->rain) blink(50);
       else if (information->speedSignalLost) blink(250);
+      else if (information->oilLevelPercent <= 0) digitalWrite(pinLed, ledState = HIGH);
+      else if (information->oilLevelPercent < 20) blink(information->oilLevelPercent * pow(10,3));
       else if (information->rain) blink(1000);
-      else if (ledState) {
+      else if (ledState == HIGH) {
       digitalWrite(pinLed, ledState = LOW);
       lastLedChange = currentMillis;
       }
@@ -58,6 +59,7 @@ private:
   }
   
   void blink(int millis) {
+    if (information->rain) millis /= 2;
     if (currentMillis > lastLedChange + millis) {
       digitalWrite(pinLed, ledState = ledState ? LOW : HIGH);
       lastLedChange = currentMillis;

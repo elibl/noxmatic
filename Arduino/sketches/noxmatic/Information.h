@@ -3,15 +3,18 @@
 
 class Information {
 public:
-  int connectWifiRetry;
-  int distancePercent;
-  int heaterPower;
-  int speed;
-  int temperature;
   bool pumpActive;
   bool pumpPending;
   bool rain;
   bool speedSignalLost;
+  int connectWifiRetry;
+  int distancePercent;
+  int heaterPower;
+  float oilLevelPercent;
+  int speed;
+  int temperature;
+  unsigned int distance = 0;
+  unsigned int ticks = 0;
   String ip;
 };
 #endif /* INFORMATION_H_ */
