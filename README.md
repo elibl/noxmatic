@@ -4,9 +4,25 @@
 - Vollautomatische wegstreckenabhängige Kettenölung
 - Vollautomatische außentemperaturabhängige Griffheizung (getrennt regelnde Griffe)
 - Display mit Anzeige von Temperatur, Geschwindigkeit, Streckenintervall und Heizleistung
+- LED zur Statusanzeige
+- Taster zur Steuerung von Basisfunktionen
 - Bequeme Konfiguration über WiFi im Browser
 - OTA Updatefähig
-- Teilaufbau möglich (nur Kettenöler, nur Griffheizung, mit und ohne Display)
+- Teilaufbau möglich (nur Kettenöler, nur Griffheizung, mit und ohne Display, LED oder Taster)
+
+## Funktionalität
+
+### LED Blink Codes
+- 4x im 1 Sekunden Takt beim Starten
+- An während Pumpe aktiv
+- Dauerhaft im 1 Sekunden Takt -> Regenmodus aktiv
+- Dauerhaft im "Öltank Restvolumen in Prozent" Sekunden Takt wenn Öltank unter 20%
+- Dauerhaft im 250 Millisekunden Takt -> kein Tachosignal seit 10 Minuten
+
+### Taster
+- 1x drücken für Rengenmodus (10-fache Ölmenge)
+- 4x schnell (500ms) drücken für Öltank zurücksetzen
+- 1x lang (5s) drücken für Pumpenaktivierung
 
 ## Komponenten
 
